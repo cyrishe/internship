@@ -5,7 +5,6 @@ import pandas as pd
 import gc
 import os
 
-# 避免显存碎片
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
 df = pd.read_csv('C:\\Users\\schoology\\Desktop\\shanghai\\1ssst\\Stage_2\\test_data.tsv', sep='\t', encoding='utf-8')
@@ -20,7 +19,7 @@ for i in range(5):
         wrong_se[i].append(sentences_2[(j + i * 20 + len(sentences_1)) % len(sentences_1)])
     df[f'测试数据{i+1}'] = wrong_se[i]
 
-# ---------------------- bge-m3 相似度 ----------------------
+# ---------------------- bge-m3 ----------------------
 model = BGEM3FlagModel('C:\\Users\\schoology\\Desktop\\shanghai\\1ssst\\models\\models\\bge-m3', use_fp16=True)
 
 for i in range(5):
@@ -36,7 +35,7 @@ for i in range(5):
     torch.cuda.empty_cache()
     gc.collect()
 
-# ---------------------- bge-reranker 打分 ----------------------
+# ---------------------- bge-reranker ----------------------
 reranker = FlagReranker('models/bge-reranker', use_fp16=True)
 
 for i in range(5):
@@ -77,7 +76,7 @@ def compute_logits(inputs, **kwargs):
     batch_scores = torch.nn.functional.log_softmax(batch_scores, dim=1)
     return batch_scores[:, 1].exp().tolist()
 
-# 初始化 tokenizer + model
+# tokenizer + model
 tokenizer = AutoTokenizer.from_pretrained("models/Qwen3-Reranker-06B", padding_side='left')
 model = AutoModelForCausalLM.from_pretrained("models/Qwen3-Reranker-06B", torch_dtype=torch.float16).cuda().eval()
 token_false_id = tokenizer.convert_tokens_to_ids("no")
@@ -89,7 +88,7 @@ prefix_tokens = tokenizer.encode(prefix, add_special_tokens=False)
 suffix_tokens = tokenizer.encode(suffix, add_special_tokens=False)
 task = 'Given a web search query, retrieve relevant passages that answer the query'
 
-# 推理5组
+# doing qwen3 reranker 5 times so that each time it uses a different set of wrong sentences
 for i in range(5):
     sentences_2 = wrong_se[i]
     pairs = [format_instruction(task, q, d) for q, d in zip(sentences_1, sentences_2)]
