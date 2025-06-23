@@ -1,0 +1,39 @@
+{
+  "task": "请根据提供的文章内容，生成一个新颖、有意义且符合要求的问题-答案对（JSON格式）。",
+  "requirements": {
+    "question_generation": {
+      "avoid_meaningless": "避免提出可推断但未明确的问题（例如：已知Alexander考了95分，不应问'还有谁考了95分'）。",
+      "indirect_reference": "问题应自然指向文章内容，但禁止使用'文章'、'本文'、'上文'等直接指代词。",
+      "novelty": "问题内容必须与'prev'列表中已有的问题不同，且核心意思不得相近。",
+      "brevity": "问题与答案均应简洁明了。"
+    },
+    "output": {
+      "format": "严格输出JSON格式：{\"question\": \"问题文本\", \"answer\": \"答案文本\"}",
+      "language": "必须使用中文。",
+      "content": "答案必须直接、准确地源自文章内容。"
+    },
+    "input_usage": {
+      "ignore_prev": "禁止复用'prev'列表中的问题或近义问题。",
+      "use_content": "问题与答案必须基于'content'字段提供的文章内容生成。"
+    }
+  },
+  "examples": {
+    "input_example": {
+      "content": "...（文章内容省略，与原文一致）...",
+      "prev": [{"question": "《AI 短线选股工具》适合哪些风险类型的投资者使用？", "answer": "AI 短线选股工具仅供稳健型及以上的权益类投资者使用。"}]
+    },
+    "valid_output_examples": [
+      {"question": "AI 短线选股工具推荐的股票适合跟踪多少个交易日？", "answer": "AI 短线选股工具跟踪 T+4 个交易日，不适合长期跟踪。"}
+    ],
+    "invalid_output_examples": [
+      {
+        "reason": "重复'prev'问题",
+        "output": {"question": "AI 短线选股工具适合哪些风险类型的投资者使用？", "answer": "AI 短线选股工具仅供稳健型及以上的权益类投资者使用。"}
+      },
+      {
+        "reason": "与'prev'问题意思相近",
+        "output": {"question": "哪些投资者可以考虑采用 AI 短线选股工具？", "answer": "适合风险偏好较高、具备短期交易经验的投资者，机构要求最低风险等级为稳健型（C3），并需签署额外风险揭示书。"}
+      }
+    ]
+  }
+}

@@ -1,0 +1,79 @@
+import json
+from openai import OpenAI
+import math, collections
+import csv
+from tqdm import tqdm
+import threading
+
+threads = []
+
+
+def shannon_entropy_cn(sentence: str) -> float:
+    counter = collections.Counter(sentence)
+    total = sum(counter.values())
+    return -sum((freq / total) * math.log2(freq / total) for freq in counter.values())
+
+
+key = "sk-c6b7fef3a032484caec5b9cf6db96a9d"
+
+client = OpenAI(
+    api_key=key,
+    base_url="https://api.deepseek.com",
+)
+with open("segments.json") as json_file:
+    question = json.load(json_file)
+with open("prompt.md") as f:
+
+    system_prompt = f.read()
+
+
+def askDeepSeek(text):
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": text},
+    ]
+    response = client.chat.completions.create(
+        model="deepseek-chat",
+        messages=messages,
+        response_format={"type": "json_object"},
+    )
+    return json.loads(response.choices[0].message.content)
+
+
+def under_j(j, writer, file_name):
+    content = j
+    user_input = {
+        "content": content,
+        "number": max(int(2 ** shannon_entropy_cn(content) / 16 + 0.5), 3),
+    }
+    # print(user_input)
+    user_input = json.dumps(user_input)
+    writer.writerow(
+        [
+            file_name.replace("\n", "\\n"),
+            content.replace("\n", "\\n"),
+            askDeepSeek(user_input),
+        ]
+    )
+
+
+def main():
+    cnt = 5
+    with open("result.csv", "w") as csv_file:
+        writer = csv.writer(csv_file, delimiter="\t")
+        writer.writerow(["father_file", "question", "answer"])
+        for i in tqdm(question, total=len(question)):
+            file_name = i
+            for j in question[i]:
+                if cnt <= 0:
+                    return
+                t = threading.Thread(target=under_j, args=(j, writer, file_name))
+                threads.append(t)
+                t.start()
+                cnt -= 1
+    for t in threads:
+        t.join()
+    print("所有线程执行完毕")
+
+
+main()
