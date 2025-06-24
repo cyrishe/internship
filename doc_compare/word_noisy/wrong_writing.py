@@ -72,10 +72,6 @@ with open('result.csv', 'r') as tsv_file:
     writer_thread_at_main.start()
     try:
         for i in tqdm(tsv_reader, total=len(tsv_reader)):
-            while nowThread>maxiuxThread:
-                for t in tqdm(threads, total=len(threads)):
-                    t.join()
-                    threads.remove(t)
             ques = i[2]
             fileName = i[0]
             segment = i[1]
@@ -84,7 +80,6 @@ with open('result.csv', 'r') as tsv_file:
             threads.append(t)
 
             t.start()
-            nowThread+=1
         for t in tqdm(threads, total=len(threads)):
             t.join()
     finally:
